@@ -19,9 +19,17 @@ app.get("/", (req, res) => {
 let messages = [];
 let rooms = [];
 let users = [];
+let roomMessages = [];
 
 io.on("connect", (socket) => {
-  console.log(socket.id);
+  console.log(socket.id, "user joined");
+  //   users.push({
+  //     username,
+  //   });
+  socket.on("disconnect", () => {
+    users.filter((user) => user.id === socket.id);
+    console.log({ users });
+  });
   socket.on("message", (message, callback) => {
     messages.push(message);
     callback({
@@ -30,15 +38,44 @@ io.on("connect", (socket) => {
     io.emit("reply", messages);
   });
 
-  socket.on("create", (name, callback) => {
-    socket.join(name);
+  socket.on("create", (roomId, username, callback) => {
+    users.push({
+      username,
+      id: socket.id,
+    });
+    if (!rooms.find((room) => room.id === roomId)) {
+      rooms.push({
+        id: roomId,
+        userId: socket.id,
+        username,
+      });
+    }
+    console.log({ users });
+    console.log({ rooms });
+    socket.join(roomId);
+    const roomIdMessages = roomMessages.filter(
+      (message) => message.roomId === roomId
+    );
+    io.to(roomId).emit("room reply", roomIdMessages);
     callback({
       status: "ok",
     });
   });
 
+  socket.on("leave", (roomId) => {
+    socket.leave(roomId);
+    // rooms.filter((room) => room.id !== roomId);
+  });
+
   socket.on("room message", (message, roomId) => {
-    io.to(roomId).emit("room reply", message);
+    roomMessages.push({
+      message,
+      roomId,
+    });
+    const roomIdMessages = roomMessages.filter(
+      (message) => message.roomId === roomId
+    );
+    io.to(roomId).emit("room reply", roomIdMessages);
   });
 });
 
