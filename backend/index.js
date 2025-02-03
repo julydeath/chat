@@ -17,17 +17,28 @@ app.get("/", (req, res) => {
 });
 
 let messages = [];
+let rooms = [];
+let users = [];
 
 io.on("connect", (socket) => {
   console.log(socket.id);
   socket.on("message", (message, callback) => {
-    console.log(message);
     messages.push(message);
     callback({
       status: "ok",
     });
-
     io.emit("reply", messages);
+  });
+
+  socket.on("create", (name, callback) => {
+    socket.join(name);
+    callback({
+      status: "ok",
+    });
+  });
+
+  socket.on("room message", (message, roomId) => {
+    io.to(roomId).emit("room reply", message);
   });
 });
 
