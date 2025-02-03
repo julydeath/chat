@@ -6,7 +6,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://192.168.1.6:3000"],
   },
 });
 
@@ -16,14 +16,18 @@ app.get("/", (req, res) => {
   res.send("Hello");
 });
 
+let messages = [];
+
 io.on("connect", (socket) => {
   console.log(socket.id);
   socket.on("message", (message, callback) => {
     console.log(message);
+    messages.push(message);
     callback({
       status: "ok",
     });
-    io.emit("reply", message);
+
+    io.emit("reply", messages);
   });
 });
 

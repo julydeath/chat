@@ -1,25 +1,21 @@
 "use client";
 import { socket } from "@/lib/socket";
 import { useEffect, useState } from "react";
-import { sendMessage } from "../actions/sendMessage";
 
 const Chat = () => {
-  const [isConnected, setIsConnected] = useState<boolean>();
-
+  const [isConnected, setIsConnected] = useState<boolean>(false);
   const [messages, setMessages] = useState<string[]>([]);
-
   const [message, setMessage] = useState("");
-
-  console.log({ isConnected });
-  console.log({ messages });
 
   useEffect(() => {
     function OnConnect() {
       setIsConnected(true);
     }
 
-    function OnReply(message: string) {
-      setMessages([...messages, message]);
+    function OnReply(allMessages: string[]) {
+      if (Array.isArray(allMessages)) {
+        setMessages([...allMessages]);
+      }
     }
 
     function OnDisconnect() {
@@ -35,42 +31,59 @@ const Chat = () => {
       socket.off("reply", OnReply);
       socket.off("disconnect", OnDisconnect);
     };
-  });
+  }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!message.trim()) return;
+
     try {
       const response = await socket
         .timeout(5000)
         .emitWithAck("message", message);
       console.log(response.status);
-    } catch (e) {
-      console.log(e);
+      setMessages((prev) => [...prev, message]); // Add message to state
+      setMessage(""); // Clear input field
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
   };
 
   return (
-    <div>
-      <div>
-        <header>Chat</header>
+    <div className="h-screen flex flex-col items-center justify-between p-4 bg-gray-900 text-white">
+      {/* Header */}
+      <div className="w-full max-w-2xl flex justify-between items-center pb-4">
+        <header className="text-2xl font-medium">Chat</header>
+        <div>{isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
       </div>
-      <div className="text-white">
-        {isConnected ? "Connected" : "Disconnected"}
+
+      {/* Messages */}
+      <div className="flex-1 w-full max-w-2xl bg-gray-800 p-4 rounded-lg overflow-y-auto">
+        {messages.map((msg, index) => (
+          <div key={index} className="bg-gray-700 p-2 my-2 rounded-lg">
+            {msg}
+          </div>
+        ))}
       </div>
-      <form onSubmit={(e) => handleSubmit(e)}>
-        <input
-          name="message"
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Enter message"
-          className="bg-white text-black px-4 py-2 rounded-lg"
-        />
-        <button
-          type="submit"
-          className="bg-white text-black px-4 py-2 rounded-lg"
-        >
-          send
-        </button>
-      </form>
+
+      {/* Chat Input */}
+      <div className="w-full max-w-2xl my-10">
+        <form className="flex gap-4" onSubmit={handleSubmit}>
+          <input
+            name="message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Enter message..."
+            className="flex-1 bg-white text-black px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+          >
+            Send
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
