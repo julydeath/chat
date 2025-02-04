@@ -17,6 +17,8 @@ const io = new Server(server, {
   path: "/socket.io/", // Explicit path
 });
 
+const port = process.env.PORT || 4000;
+
 // Add basic health check route
 app.get("/", (req, res) => {
   res.send("Socket.IO server is running");
@@ -114,6 +116,6 @@ io.on("connect", (socket) => {
   });
 });
 
-server.listen(8080, () => {
+server.listen(port, () => {
   console.log("Server running on port 8080");
 });
