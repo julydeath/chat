@@ -37,18 +37,22 @@ io.on("connect", (socket) => {
     io.emit("reply", messages);
   });
 
-  socket.on("create", (roomId, username, callback) => {
-    users.push({
-      username,
-      id: socket.id,
-    });
+  socket.on("create", (roomId, name, userId, callback) => {
+    const userExisted = users.find((user) => user.id === userId);
+    if (!userExisted) {
+      users.push({
+        name,
+        id: socket.id,
+      });
+    }
+
     const currentRoom = rooms.find((room) => room.id === roomId);
     console.log(currentRoom);
     if (!currentRoom) {
       rooms.push({
         id: roomId,
         userIds: [socket.id],
-        username,
+        name,
       });
     } else {
       currentRoom.userIds = [...currentRoom.userIds, socket.id];
@@ -79,10 +83,12 @@ io.on("connect", (socket) => {
     }
   });
 
-  socket.on("room message", (message, roomId) => {
+  socket.on("room message", (message, roomId, userId, name) => {
     roomMessages.push({
       message,
       roomId,
+      userId,
+      name,
     });
     const roomIdMessages = roomMessages.filter(
       (message) => message.roomId === roomId

@@ -8,8 +8,14 @@ const Room = () => {
   const [message, setMessage] = useState("");
   const [roomId, setRoomId] = useState("");
   const [name, setName] = useState("");
+  const [userId, setUserId] = useState("");
 
-  type RoomMessage = { message: string; roomId: string };
+  type RoomMessage = {
+    message: string;
+    roomId: string;
+    userId: string;
+    name: string;
+  };
 
   useEffect(() => {
     function OnReply(messageData: RoomMessage[]) {
@@ -20,6 +26,16 @@ const Room = () => {
       setIsConnected(false);
     }
 
+    const storeUserId = localStorage.getItem("socket") || "";
+    const storedName = localStorage.getItem("name") || "";
+    const storedRoomId = localStorage.getItem("roomId") || "";
+
+    setName(storedName);
+    setRoomId(storedRoomId);
+    setUserId(storeUserId);
+
+    preFetch(storeUserId, storedName, storedRoomId);
+
     socket.on("room reply", OnReply);
     socket.on("disconnect", OnDisconnect);
 
@@ -29,36 +45,59 @@ const Room = () => {
     };
   }, []);
 
+  const preFetch = async (uId: string, username: string, rId: string) => {
+    console.log({ uId, username, rId });
+    if (username.length > 0 && rId.length > 0) {
+      await socket.timeout(5000).emitWithAck("create", rId, username, uId);
+      setIsConnected(true);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!message.trim()) return;
 
-    socket.emit("room message", message, roomId);
-    setMessages((prev) => [...prev, { message, roomId }]); // Add message to state
+    socket.emit("room message", message, roomId, userId, name);
+    setMessages((prev) => [...prev, { message, roomId, userId, name }]); // Add message to state
     setMessage(""); // Clear input field
   };
 
   const handleJoinRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await socket.timeout(5000).emitWithAck("create", roomId, name);
+      await socket.timeout(5000).emitWithAck("create", roomId, name, socket.id);
+      localStorage.setItem("roomId", roomId);
+      localStorage.setItem("name", name);
+      localStorage.setItem("socket", socket.id!);
+      setUserId(socket.id!);
       setIsConnected(true);
     } catch (e) {
       console.log(e);
+      localStorage.removeItem("roomId");
+      localStorage.removeItem("name");
+      localStorage.setItem("socket", socket.id!);
     }
   };
 
   const handleLeaveRoom = () => {
     socket.emit("leave", roomId);
+    localStorage.removeItem("roomId");
+    localStorage.removeItem("name");
+    localStorage.setItem("socket", socket.id!);
     setIsConnected(false);
+    setMessages([]);
+    setRoomId("");
+    setName("");
   };
 
   return (
     <div className="h-screen flex flex-col items-center justify-between p-4 bg-gray-900 text-white">
       {/* Header */}
       <div className="w-full max-w-4xl flex justify-between items-center pb-4">
-        <header className="text-2xl font-medium">Room - {roomId}</header>
+        <header className="text-2xl font-medium">
+          Room - {roomId && roomId}
+        </header>
         {!isConnected ? (
           <div>
             <form className="flex gap-4" onSubmit={handleJoinRoom}>
@@ -102,6 +141,7 @@ const Room = () => {
         {messages.map((msg, index) => (
           <div key={index} className="bg-gray-700 p-2 my-2 rounded-lg">
             {msg.message}
+            {msg.name}
           </div>
         ))}
       </div>
