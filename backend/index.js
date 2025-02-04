@@ -8,15 +8,29 @@ const io = new Server(server, {
   cors: {
     origin: [
       "http://localhost:3000",
-      "https://chat-frontend-nine-beige.vercel.app/",
+      "https://chat-frontend-nine-beige.vercel.app",
     ],
+    methods: ["GET", "POST"],
+    credentials: true,
   },
+  transports: ["websocket", "polling"], // Enable both WebSocket and polling
+  path: "/socket.io/", // Explicit path
 });
 
-app.use(express.json());
-
+// Add basic health check route
 app.get("/", (req, res) => {
-  res.send("Hello");
+  res.send("Socket.IO server is running");
+});
+
+// Add CORS middleware
+app.use((req, res, next) => {
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://chat-frontend-nine-beige.vercel.app"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
 });
 
 let messages = [];
