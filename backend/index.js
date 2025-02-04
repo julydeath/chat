@@ -22,12 +22,11 @@ let users = [];
 let roomMessages = [];
 
 io.on("connect", (socket) => {
-  console.log(socket.id, "user joined");
-  //   users.push({
-  //     username,
-  //   });
   socket.on("disconnect", () => {
-    users.filter((user) => user.id === socket.id);
+    const index = users.findIndex((user) => user.id === socket.id);
+    if (index !== -1) {
+      users.splice(index, 1);
+    }
     console.log({ users });
   });
   socket.on("message", (message, callback) => {
@@ -43,15 +42,17 @@ io.on("connect", (socket) => {
       username,
       id: socket.id,
     });
-    if (!rooms.find((room) => room.id === roomId)) {
+    const currentRoom = rooms.find((room) => room.id === roomId);
+    console.log(currentRoom);
+    if (!currentRoom) {
       rooms.push({
         id: roomId,
-        userId: socket.id,
+        userIds: [socket.id],
         username,
       });
+    } else {
+      currentRoom.userIds = [...currentRoom.userIds, socket.id];
     }
-    console.log({ users });
-    console.log({ rooms });
     socket.join(roomId);
     const roomIdMessages = roomMessages.filter(
       (message) => message.roomId === roomId
@@ -64,7 +65,18 @@ io.on("connect", (socket) => {
 
   socket.on("leave", (roomId) => {
     socket.leave(roomId);
-    // rooms.filter((room) => room.id !== roomId);
+    const currentRoom = rooms.find((room) => room.id === roomId);
+    if (currentRoom) {
+      currentRoom.userIds = currentRoom.userIds.filter(
+        (id) => id !== socket.id
+      );
+      if (currentRoom?.userIds.length === 0) {
+        const index = rooms.findIndex((room) => room.id === roomId);
+        if (index !== -1) {
+          rooms.splice(index, 1);
+        }
+      }
+    }
   });
 
   socket.on("room message", (message, roomId) => {
