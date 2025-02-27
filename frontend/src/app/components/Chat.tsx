@@ -50,17 +50,19 @@ const Chat = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col items-center justify-between p-4 bg-gray-900 text-white">
+    <div className="h-screen flex flex-col items-center justify-between p-4 bg-base-100 text-white">
       {/* Header */}
-      <div className="w-full max-w-2xl flex justify-between items-center pb-4">
+      <div className="w-full max-w-2xl flex justify-between items-center py-2 px-4 bg-secondary text-bg-secondary-content rounded-lg mb-2">
         <header className="text-2xl font-medium">Chat</header>
         <div>{isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
       </div>
-
       {/* Messages */}
-      <div className="flex-1 w-full max-w-2xl bg-gray-800 p-4 rounded-lg overflow-y-auto">
+      <div className="flex-1 w-full max-w-2xl bg-neutral p-4 rounded-lg overflow-y-auto">
         {messages.map((msg, index) => (
-          <div key={index} className="bg-gray-700 p-2 my-2 rounded-lg">
+          <div
+            key={index}
+            className="bg-neutral-content text-primary-content p-2 my-2 rounded-lg"
+          >
             {msg}
           </div>
         ))}
@@ -74,12 +76,16 @@ const Chat = () => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Enter message..."
-            className="flex-1 bg-white text-black px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="input input-bordered w-full"
           />
-          <button
+          {/* <button
             type="submit"
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
           >
+            Send
+          </button> */}
+          <button className="btn btn-active">
+            <span className="loading loading-spinner"></span>
             Send
           </button>
         </form>
