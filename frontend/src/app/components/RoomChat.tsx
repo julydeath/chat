@@ -94,7 +94,7 @@ const RoomChat = () => {
   return (
     <div className="h-full flex flex-col items-center justify-between p-4 bg-base-100">
       {/* Header */}
-      <div className="max-w-4xl flex items-center gap-20 justify-between pb-4 prose">
+      <div className="w-full flex items-center gap-20 justify-between pb-4 prose">
         <div>
           <header className="text-2xl font-medium ">
             Room ID - {roomId && roomId}
@@ -118,14 +118,14 @@ const RoomChat = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter name..."
-                    className="input input-bordered"
+                    className="input input-bordered text-white"
                   />
                   <input
                     name="roomId"
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
                     placeholder="Enter room code..."
-                    className="input input-bordered my-4"
+                    className="input input-bordered my-4 text-white"
                   />
                   <button type="submit" className="btn">
                     Connect
@@ -150,7 +150,7 @@ const RoomChat = () => {
         <div>{isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
       </div>
       {/* Messages */}
-      <div className="flex-1 w-full max-w-2xl bg-gray-900 p-4 rounded-lg overflow-y-auto prose">
+      <div className="flex-1 w-full max-w-3xl bg-gray-900 p-4 rounded-lg overflow-y-auto prose">
         {messages.map((msg, index) => (
           <div key={index} className="bg-gray-700 p-2 my-2 rounded-lg">
             {msg.message}
@@ -159,14 +159,15 @@ const RoomChat = () => {
         ))}
       </div>
       {/* Chat Input */}
-      <div className="w-full max-w-2xl my-10">
+      <div className="w-full max-w-3xl my-10">
         <form className="flex gap-4" onSubmit={handleSubmit}>
           <input
             name="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Enter message..."
-            className="input input-bordered input-info w-full "
+            // disabled={}
+            className="input input-bordered input-info w-full text-white"
           />
           <button type="submit" className="btn">
             Send
