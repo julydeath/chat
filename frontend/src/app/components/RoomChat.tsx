@@ -2,7 +2,7 @@
 import { socket } from "@/lib/socket";
 import { useEffect, useState } from "react";
 
-const Room = () => {
+const RoomChat = () => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [message, setMessage] = useState("");
@@ -92,36 +92,50 @@ const Room = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col items-center justify-between p-4 bg-gray-900 text-white">
+    <div className="h-full flex flex-col items-center justify-between p-4 bg-base-100">
       {/* Header */}
-      <div className="w-full max-w-4xl flex justify-between items-center pb-4">
-        <header className="text-2xl font-medium">
-          Room - {roomId && roomId}
-        </header>
+      <div className="max-w-4xl flex items-center gap-20 justify-between pb-4 prose">
+        <div>
+          <header className="text-2xl font-medium ">
+            Room ID - {roomId && roomId}
+          </header>
+        </div>
+
         {!isConnected ? (
           <div>
-            <form className="flex gap-4" onSubmit={handleJoinRoom}>
-              <input
-                name="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter name..."
-                className="flex-1 bg-white text-black px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                name="roomId"
-                value={roomId}
-                onChange={(e) => setRoomId(e.target.value)}
-                placeholder="Enter room code..."
-                className="flex-1 bg-white text-black px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-              >
-                Connect
-              </button>
-            </form>
+            <button
+              className="btn"
+              onClick={() => document.getElementById("my_modal_2").showModal()}
+            >
+              Join/Create
+            </button>
+
+            <dialog id="my_modal_2" className="modal">
+              <div className="modal-box">
+                <form className="flex flex-col" onSubmit={handleJoinRoom}>
+                  <input
+                    name="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter name..."
+                    className="input input-bordered"
+                  />
+                  <input
+                    name="roomId"
+                    value={roomId}
+                    onChange={(e) => setRoomId(e.target.value)}
+                    placeholder="Enter room code..."
+                    className="input input-bordered my-4"
+                  />
+                  <button type="submit" className="btn">
+                    Connect
+                  </button>
+                </form>
+              </div>
+              <form method="dialog" className="modal-backdrop">
+                <button>close</button>
+              </form>
+            </dialog>
           </div>
         ) : (
           <div>
@@ -135,9 +149,8 @@ const Room = () => {
         )}
         <div>{isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
       </div>
-
       {/* Messages */}
-      <div className="flex-1 w-full max-w-2xl bg-gray-800 p-4 rounded-lg overflow-y-auto">
+      <div className="flex-1 w-full max-w-2xl bg-gray-900 p-4 rounded-lg overflow-y-auto prose">
         {messages.map((msg, index) => (
           <div key={index} className="bg-gray-700 p-2 my-2 rounded-lg">
             {msg.message}
@@ -145,7 +158,6 @@ const Room = () => {
           </div>
         ))}
       </div>
-
       {/* Chat Input */}
       <div className="w-full max-w-2xl my-10">
         <form className="flex gap-4" onSubmit={handleSubmit}>
@@ -154,12 +166,9 @@ const Room = () => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Enter message..."
-            className="flex-1 bg-white text-black px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="input input-bordered input-info w-full "
           />
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-          >
+          <button type="submit" className="btn">
             Send
           </button>
         </form>
@@ -168,4 +177,4 @@ const Room = () => {
   );
 };
 
-export default Room;
+export default RoomChat;

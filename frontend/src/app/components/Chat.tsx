@@ -1,4 +1,5 @@
 "use client";
+
 import { socket } from "@/lib/socket";
 import { useEffect, useState } from "react";
 
@@ -50,7 +51,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col items-center justify-between p-4 bg-base-100 text-white">
+    <div className="h-full flex flex-col items-center justify-between p-4 bg-base-100 text-white">
       {/* Header */}
       <div className="w-full max-w-2xl flex justify-between items-center py-2 px-4 bg-secondary text-bg-secondary-content rounded-lg mb-2">
         <header className="text-2xl font-medium">Chat</header>
