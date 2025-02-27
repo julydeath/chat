@@ -58,7 +58,7 @@ const Chat = () => {
         <div>{isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
       </div>
       {/* Messages */}
-      <div className="flex-1 w-full max-w-3xl bg-neutral p-4 rounded-lg overflow-y-auto">
+      <div className="flex-1 w-full max-w-3xl bg-neutral p-4 rounded-lg overflow-y-auto max-h-72">
         {messages.map((msg, index) => (
           <div
             key={index}

@@ -1,6 +1,6 @@
 "use client";
 import { socket } from "@/lib/socket";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const RoomChat = () => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -9,6 +9,8 @@ const RoomChat = () => {
   const [roomId, setRoomId] = useState("");
   const [name, setName] = useState("");
   const [userId, setUserId] = useState("");
+  const [formError, setFormError] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   type RoomMessage = {
     message: string;
@@ -45,6 +47,15 @@ const RoomChat = () => {
     };
   }, []);
 
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const preFetch = async (uId: string, username: string, rId: string) => {
     console.log({ uId, username, rId });
     if (username.length > 0 && rId.length > 0) {
@@ -65,6 +76,20 @@ const RoomChat = () => {
 
   const handleJoinRoom = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Form validation
+    if (!name.trim()) {
+      setFormError("Name is required");
+      return;
+    }
+
+    if (!roomId.trim()) {
+      setFormError("Room ID is required");
+      return;
+    }
+
+    setFormError(""); // Clear any previous errors
+
     try {
       await socket.timeout(5000).emitWithAck("create", roomId, name, socket.id);
       localStorage.setItem("roomId", roomId);
@@ -72,8 +97,15 @@ const RoomChat = () => {
       localStorage.setItem("socket", socket.id!);
       setUserId(socket.id!);
       setIsConnected(true);
+
+      // Close the modal after successful connection
+      document
+        .getElementById("my_modal_2")
+        ?.querySelector("form[method='dialog'] button")
+        ?.click();
     } catch (e) {
       console.log(e);
+      setFormError("Failed to connect. Please try again.");
       localStorage.removeItem("roomId");
       localStorage.removeItem("name");
       localStorage.setItem("socket", socket.id!);
@@ -105,7 +137,10 @@ const RoomChat = () => {
           <div>
             <button
               className="btn"
-              onClick={() => document.getElementById("my_modal_2").showModal()}
+              onClick={() => {
+                setFormError(""); // Clear any previous errors
+                document.getElementById("my_modal_2")?.showModal();
+              }}
             >
               Join/Create
             </button>
@@ -117,16 +152,21 @@ const RoomChat = () => {
                     name="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter name..."
+                    placeholder="Enter name... *"
                     className="input input-bordered text-white"
+                    required
                   />
                   <input
                     name="roomId"
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
-                    placeholder="Enter room code..."
+                    placeholder="Enter room code... *"
                     className="input input-bordered my-4 text-white"
+                    required
                   />
+                  {formError && (
+                    <div className="text-error mb-4">{formError}</div>
+                  )}
                   <button type="submit" className="btn">
                     Connect
                   </button>
@@ -141,7 +181,7 @@ const RoomChat = () => {
           <div>
             <button
               onClick={handleLeaveRoom}
-              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+              className="btn btn-outline btn-error"
             >
               Leave
             </button>
@@ -150,13 +190,16 @@ const RoomChat = () => {
         <div>{isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
       </div>
       {/* Messages */}
-      <div className="flex-1 w-full max-w-3xl bg-gray-900 p-4 rounded-lg overflow-y-auto prose">
-        {messages.map((msg, index) => (
-          <div key={index} className="bg-gray-700 p-2 my-2 rounded-lg">
-            {msg.message}
-            {msg.name}
-          </div>
-        ))}
+      <div className="flex-1 w-full max-w-3xl bg-gray-900 p-4 rounded-lg prose overflow-y-auto max-h-72">
+        <div className="flex flex-col space-y-2">
+          {messages.map((msg, index) => (
+            <div key={index} className="bg-gray-700 p-2 rounded-lg">
+              <strong>{msg.name}: </strong>
+              {msg.message}
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
       {/* Chat Input */}
       <div className="w-full max-w-3xl my-10">
@@ -166,10 +209,10 @@ const RoomChat = () => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Enter message..."
-            // disabled={}
+            disabled={!isConnected}
             className="input input-bordered input-info w-full text-white"
           />
-          <button type="submit" className="btn">
+          <button type="submit" className="btn" disabled={!isConnected}>
             Send
           </button>
         </form>
