@@ -119,19 +119,29 @@ io.on("connect", (socket) => {
   });
 
   socket.on("join-video-room", (roomId, userData) => {
-
-    const room = videoRooms.find((room) => room.id === roomId);
-    if(!room){
-      room = {id : roomId, users: []};
-      videoRooms.push(room)
+    let room = videoRooms.find((room) => room.id === roomId);
+  
+    // Create room if it doesn't exist
+    if (!room) {
+      room = { id: roomId, users: [] };
+      videoRooms.push(room);
     }
-
+    
+    // Check if room already has 2 users
+    if (room.users.length >= 2) {
+      // Notify user that room is full
+      socket.emit("room-full", { roomId });
+      return;
+    }
+    
     const user = { ...userData, id: socket.id };
     room.users.push(user);
     socket.join(roomId);
-
+  
+    // Notify others in the room
     socket.to(roomId).emit("video-room-user-connected", user);
-
+  
+    // Send existing users to the new participant
     const existingUsers = room.users.filter(u => u.id !== socket.id);
     socket.emit("existing-users", existingUsers);
   })
