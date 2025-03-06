@@ -99,10 +99,11 @@ const RoomChat = () => {
       setIsConnected(true);
 
       // Close the modal after successful connection
-      document
+      const closeButton = document
         .getElementById("my_modal_2")
-        ?.querySelector("form[method='dialog'] button")
-        ?.click();
+        ?.querySelector("form[method='dialog'] button") as HTMLButtonElement
+
+        closeButton.click()
     } catch (e) {
       console.log(e);
       setFormError("Failed to connect. Please try again.");
@@ -139,7 +140,8 @@ const RoomChat = () => {
               className="btn"
               onClick={() => {
                 setFormError(""); // Clear any previous errors
-                document.getElementById("my_modal_2")?.showModal();
+                const x = document.getElementById("my_modal_2") as HTMLDialogElement;
+                x.showModal()
               }}
             >
               Join/Create
