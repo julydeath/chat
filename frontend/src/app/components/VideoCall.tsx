@@ -1,7 +1,6 @@
 "use client";
 
-import { Fullscreen } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ReactPlayer from "react-player";
 
 export default function VideoCall() {

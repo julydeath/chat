@@ -40,6 +40,9 @@ let rooms = [];
 let users = [];
 let roomMessages = [];
 
+let videoUsers = [];
+let videoRooms = [];
+
 io.on("connect", (socket) => {
   socket.on("disconnect", () => {
     const index = users.findIndex((user) => user.id === socket.id);
@@ -114,6 +117,61 @@ io.on("connect", (socket) => {
     );
     io.to(roomId).emit("room reply", roomIdMessages);
   });
+
+  socket.on("join-video-room", (roomId, userData) => {
+
+    const room = videoRooms.find((room) => room.id === roomId);
+    if(!room){
+      room = {id : roomId, users: []};
+      videoRooms.push(room)
+    }
+
+    const user = { ...userData, id: socket.id };
+    room.users.push(user);
+    socket.join(roomId);
+
+    socket.to(roomId).emit("video-room-user-connected", user);
+
+    const existingUsers = room.users.filter(u => u.id !== socket.id);
+    socket.emit("existing-users", existingUsers);
+  })
+
+  socket.on("offer", (data) => {
+    socket.to(data.to).emit("offer", {
+      offer: data.offer,
+      from: socket.id
+    });
+  });
+
+  socket.on("answer", (data) => {
+    socket.to(data.to).emit("answer", {
+      answer: data.answer,
+      from: socket.id
+    });
+  });
+
+  socket.on("ice-candidate", (data) => {
+    socket.to(data.to).emit("ice-candidate", {
+      candidate: data.candidate,
+      from: socket.id
+    });
+  });
+
+  socket.on("leave-video-room", (roomId) => {
+    videoRooms.forEach((room, index) => {
+      const userIndex = room.users.findIndex(u => u.id === socket.id);
+      if(userIndex!== -1){
+        const disconnectedUser = room.users[userIndex];
+        room.users.splice(userIndex, 1);
+        socket.to(room.id).emit("video-room-user-disconnected", disconnectedUser);
+
+        // Remove room if no users
+        if (room.users.length === 0) {
+          rooms = rooms.filter(r => r.id !== room.id);
+        }
+      }
+    })
+  })
 });
 
 server.listen(port, () => {
