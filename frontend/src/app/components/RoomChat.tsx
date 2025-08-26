@@ -64,14 +64,20 @@ const RoomChat = () => {
     }
   };
 
+  const [loading, setLoading] = useState(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!message.trim()) return;
-
-    socket.emit("room message", message, roomId, userId, name);
-    setMessages((prev) => [...prev, { message, roomId, userId, name }]); // Add message to state
-    setMessage(""); // Clear input field
+    setLoading(true);
+    try {
+      socket.emit("room message", message, roomId, userId, name);
+      setMessage(""); // Clear input field
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleJoinRoom = async (e: React.FormEvent) => {
@@ -125,97 +131,123 @@ const RoomChat = () => {
   };
 
   return (
-    <div className="h-full flex flex-col items-center justify-between p-4 bg-base-100">
+    <div className="h-full flex flex-col items-center justify-between p-4 bg-gray-900 text-white">
       {/* Header */}
-      <div className="w-full flex items-center gap-20 justify-between pb-4 prose">
-        <div>
-          <header className="text-2xl font-medium ">
-            Room ID - {roomId && roomId}
-          </header>
-        </div>
-
-        {!isConnected ? (
-          <div>
+      <div className="w-full max-w-4xl flex justify-between items-center py-3 px-6 bg-gray-800 rounded-lg shadow-md mb-4">
+        <header className="text-3xl font-bold">
+          Room - {roomId ? <span>{roomId}</span> : "Not Connected"}
+        </header>
+        <div className="flex items-center gap-4">
+          {!isConnected ? (
             <button
-              className="btn"
+              className="btn btn-primary rounded-lg shadow-md"
               onClick={() => {
                 setFormError(""); // Clear any previous errors
-                const x = document.getElementById("my_modal_2") as HTMLDialogElement;
-                x.showModal()
+                const x = document.getElementById(
+                  "my_modal_2"
+                ) as HTMLDialogElement;
+                x.showModal();
               }}
             >
-              Join/Create
+              Join/Create Room
             </button>
-
-            <dialog id="my_modal_2" className="modal">
-              <div className="modal-box">
-                <form className="flex flex-col" onSubmit={handleJoinRoom}>
-                  <input
-                    name="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter name... *"
-                    className="input input-bordered text-white"
-                    required
-                  />
-                  <input
-                    name="roomId"
-                    value={roomId}
-                    onChange={(e) => setRoomId(e.target.value)}
-                    placeholder="Enter room code... *"
-                    className="input input-bordered my-4 text-white"
-                    required
-                  />
-                  {formError && (
-                    <div className="text-error mb-4">{formError}</div>
-                  )}
-                  <button type="submit" className="btn">
-                    Connect
-                  </button>
-                </form>
-              </div>
-              <form method="dialog" className="modal-backdrop">
-                <button>close</button>
-              </form>
-            </dialog>
-          </div>
-        ) : (
-          <div>
+          ) : (
             <button
               onClick={handleLeaveRoom}
-              className="btn btn-outline btn-error"
+              className="btn btn-error rounded-lg shadow-md"
             >
-              Leave
+              Leave Room
             </button>
+          )}
+          <div
+            className={`text-lg font-semibold ${
+              isConnected ? "text-green-400" : "text-red-400"
+            }`}
+          >
+            {isConnected ? "● Connected" : "● Disconnected"}
           </div>
-        )}
-        <div>{isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
-      </div>
-      {/* Messages */}
-      <div className="flex-1 w-full max-w-3xl bg-gray-900 p-4 rounded-lg prose overflow-y-auto max-h-72">
-        <div className="flex flex-col space-y-2">
-          {messages.map((msg, index) => (
-            <div key={index} className="bg-gray-700 p-2 rounded-lg">
-              <strong>{msg.name}: </strong>
-              {msg.message}
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
         </div>
       </div>
+
+      {/* Join Room Modal */}
+      <dialog id="my_modal_2" className="modal">
+        <div className="modal-box bg-gray-800 text-white rounded-lg shadow-lg">
+          <h3 className="font-bold text-2xl mb-4">Join or Create a Room</h3>
+          <form className="flex flex-col gap-4" onSubmit={handleJoinRoom}>
+            <input
+              name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name *"
+              className="input input-bordered w-full bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 rounded-lg"
+              required
+            />
+            <input
+              name="roomId"
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              placeholder="Enter room code *"
+              className="input input-bordered w-full bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 rounded-lg"
+              required
+            />
+            {formError && <div className="text-red-400 mt-2">{formError}</div>}
+            <button type="submit" className="btn btn-primary w-full mt-4 rounded-lg shadow-md">
+              Connect
+            </button>
+          </form>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+
+      {/* Messages */}
+      <div className="flex-1 w-full max-w-4xl bg-gray-800 p-6 rounded-lg overflow-y-auto shadow-inner">
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`chat ${
+              msg.userId === userId ? "chat-end" : "chat-start"
+            }`}
+          >
+            <div className="chat-header text-sm opacity-70">
+              {msg.name}
+            </div>
+            <div
+              className={`chat-bubble ${
+                msg.userId === userId
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-700 text-white"
+              }`}
+            >
+              {msg.message}
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
       {/* Chat Input */}
-      <div className="w-full max-w-3xl my-10">
+      <div className="w-full max-w-4xl mt-4">
         <form className="flex gap-4" onSubmit={handleSubmit}>
           <input
             name="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Enter message..."
-            disabled={!isConnected}
-            className="input input-bordered input-info w-full text-white"
+            disabled={!isConnected || loading}
+            className="input input-bordered w-full bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 rounded-lg"
           />
-          <button type="submit" className="btn" disabled={!isConnected}>
-            Send
+          <button
+            type="submit"
+            className="btn btn-primary rounded-lg shadow-md"
+            disabled={!isConnected || loading}
+          >
+            {loading ? (
+              <span className="loading loading-spinner"></span>
+            ) : (
+              "Send"
+            )}
           </button>
         </form>
       </div>
