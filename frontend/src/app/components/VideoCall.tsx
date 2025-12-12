@@ -1,18 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
 import { socket } from "@/lib/socket";
 
-interface User {
-  id: string;
-  name: string;
-}
-
 interface PeerConnection {
   peerId: string;
   peerConnection: RTCPeerConnection;
   stream?: MediaStream;
-  uniqueId: string;
+  uniqueId?: string;
 }
 
 export default function VideoCall() {
@@ -118,13 +114,13 @@ export default function VideoCall() {
     return { peerConnection, uniqueId };
   };
 
-  const handleUserConnected = async (user: User) => {
+  const handleUserConnected = async (user: any) => {
     const { peerConnection, uniqueId } = createPeerConnection(user.id, localStream || screenStream);
     
     setPeerConnections(prev => [
-      ...prev,
-      {
-        peerId: user.id,
+      ...prev, 
+      { 
+        peerId: user.id, 
         peerConnection,
         uniqueId
       }
@@ -140,7 +136,7 @@ export default function VideoCall() {
     });
   };
 
-  const handleExistingUsers = async (users: User[]) => {
+  const handleExistingUsers = async (users: any[]) => {
     // Since we're limiting to 2 users, we should only ever have at most 1 existing user
     setIsInRoom(true);
     
@@ -148,9 +144,9 @@ export default function VideoCall() {
       const { peerConnection, uniqueId } = createPeerConnection(user.id, localStream || screenStream);
       
       setPeerConnections(prev => [
-        ...prev,
-        {
-          peerId: user.id,
+        ...prev, 
+        { 
+          peerId: user.id, 
           peerConnection,
           uniqueId
         }
@@ -162,9 +158,9 @@ export default function VideoCall() {
     const { peerConnection, uniqueId } = createPeerConnection(data.from, localStream || screenStream);
     
     setPeerConnections(prev => [
-      ...prev,
-      {
-        peerId: data.from,
+      ...prev, 
+      { 
+        peerId: data.from, 
         peerConnection,
         uniqueId
       }
@@ -194,8 +190,8 @@ export default function VideoCall() {
     }
   };
 
-  const handleUserDisconnected = (user: User) => {
-    setPeerConnections(prev =>
+  const handleUserDisconnected = (user: any) => {
+    setPeerConnections(prev => 
       prev.filter(pc => pc.peerId !== user.id)
     );
   };
@@ -322,35 +318,35 @@ export default function VideoCall() {
   };
 
   const renderVideoGrid = () => {
+    // For 2-user limit, we want a simpler layout
     return (
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+      <div className="flex flex-wrap gap-4 justify-center">
         {/* Local Video */}
-        <div className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg">
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white px-3 py-1 rounded-md text-sm">
-            You ({username}) {screenStream ? "(Sharing Screen)" : ""}
-          </div>
-        </div>
-
-        {/* Peer Videos */}
-        {peerConnections.map((peer) => (
-          <div
-            key={peer.uniqueId}
-            className="relative bg-gray-800 rounded-lg overflow-hidden shadow-lg"
-          >
-            <video
-              ref={(el) => {
-                if (el) videoRefs.current[peer.uniqueId] = el;
-              }}
-              autoPlay
-              className="w-full h-full object-cover"
+        {(localStream || screenStream) && (
+          <div className="relative w-full max-w-lg">
+            <video 
+              ref={localVideoRef} 
+              autoPlay 
+              muted 
+              className="w-full h-auto rounded-lg border-2 border-blue-500"
             />
-            <div className="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white px-3 py-1 rounded-md text-sm">
+            <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded">
+              You ({username}) {screenStream ? '(Sharing Screen)' : ''}
+            </div>
+          </div>
+        )}
+
+        {/* Peer Videos - with 2-user limit, there will be at most 1 */}
+        {peerConnections.map((peer) => (
+          <div key={peer.uniqueId || `peer-${peer.peerId}-${Math.random()}`} className="relative w-full max-w-lg">
+            <video 
+              ref={(el) => {
+                if (el) videoRefs.current[peer.uniqueId || peer.peerId] = el;
+              }}
+              autoPlay 
+              className="w-full h-auto rounded-lg border-2 border-green-500"
+            />
+            <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded">
               Remote User
             </div>
           </div>
@@ -360,82 +356,51 @@ export default function VideoCall() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-white">
-      {/* Header & Controls */}
-      <div className="bg-gray-800 p-4 shadow-md">
-        {errorMessage && (
-          <div className="bg-red-500 text-white p-3 rounded-md mb-4 text-center">
-            {errorMessage}
-          </div>
-        )}
-
+    <div className="p-4 space-y-4">
+      {errorMessage && (
+        <div className="bg-red-500 text-white p-3 rounded-md mb-4">
+          {errorMessage}
+        </div>
+      )}
+      
+      <div className="flex flex-wrap gap-4">
+        <input 
+          placeholder="Room ID" 
+          value={roomId}
+          onChange={(e) => setRoomId(e.target.value)}
+          className="input input-bordered text-white"
+          disabled={isInRoom}
+        />
+        <input 
+          placeholder="Username" 
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="input input-bordered text-white"
+          disabled={isInRoom}
+        />
         {!isInRoom ? (
-          <div className="flex flex-wrap gap-4 items-center justify-center">
-            <input
-              placeholder="Room ID"
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="input input-bordered bg-gray-700 text-white rounded-lg"
-            />
-            <input
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="input input-bordered bg-gray-700 text-white rounded-lg"
-            />
-            <button onClick={joinRoom} className="btn btn-primary rounded-lg">
-              Join Room
-            </button>
-          </div>
+          <button onClick={joinRoom} className="btn btn-primary">Join Room</button>
         ) : (
-          <div className="flex flex-wrap gap-4 items-center justify-center">
-            <button
-              onClick={startCamera}
-              className="btn btn-success rounded-lg"
-              disabled={!!localStream}
-            >
-              Start Camera
-            </button>
-            <button
-              onClick={stopCamera}
-              className="btn btn-warning rounded-lg"
-              disabled={!localStream}
-            >
-              Stop Camera
-            </button>
-            <button
-              onClick={startScreenShare}
-              className="btn btn-info rounded-lg"
-              disabled={!!screenStream}
-            >
-              Share Screen
-            </button>
-            <button
-              onClick={stopScreenShare}
-              className="btn btn-warning rounded-lg"
-              disabled={!screenStream}
-            >
-              Stop Screen Share
-            </button>
-            <button onClick={leaveRoom} className="btn btn-error rounded-lg">
-              Leave Room
-            </button>
-          </div>
+          <button onClick={leaveRoom} className="btn btn-error">Leave Room</button>
         )}
       </div>
 
-      {/* Video Grid or Placeholder */}
-      {isInRoom ? (
-        renderVideoGrid()
-      ) : (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-          <h2 className="text-3xl font-bold mb-4">Video Call</h2>
-          <p className="text-lg text-gray-400">
-            Enter a Room ID and your Username to start or join a video call.
-          </p>
-          <p className="mt-2 text-gray-500">
-            This video call is limited to 2 users per room.
-          </p>
+      {isInRoom && (
+        <div className="flex flex-wrap gap-4">
+          <button onClick={startCamera} className="btn btn-success" disabled={!!localStream}>Start Camera</button>
+          <button onClick={stopCamera} className="btn btn-warning" disabled={!localStream}>Stop Camera</button>
+          <button onClick={startScreenShare} className="btn btn-info" disabled={!!screenStream}>Share Screen</button>
+          <button onClick={stopScreenShare} className="btn btn-warning" disabled={!screenStream}>Stop Screen Share</button>
+        </div>
+      )}
+
+      {isInRoom && renderVideoGrid()}
+      
+      {!isInRoom && (
+        <div className="text-center mt-8 p-6 bg-gray-800 rounded-lg">
+          <h2 className="text-xl mb-4">Video Call App</h2>
+          <p>Enter a Room ID and your Username to join a video call.</p>
+          <p className="mt-2 text-gray-400">Limited to 2 users per room for optimal performance.</p>
         </div>
       )}
     </div>

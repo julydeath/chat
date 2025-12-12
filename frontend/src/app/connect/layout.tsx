@@ -1,25 +1,20 @@
-"use client";
-import { usePathname } from "next/navigation";
-import Tabs from "../components/Tabs";
-
 export default function ConnectLayout({
+  children,
   room,
   global,
   video,
 }: {
+  children: React.ReactNode;
   room: React.ReactNode;
   global: React.ReactNode;
   video: React.ReactNode;
 }) {
-  const pathname = usePathname();
   return (
-    <div className="h-screen flex flex-col p-4 bg-gray-900">
-      <Tabs />
-      <div className="flex-1 mt-4">
-        {pathname.includes("/connect/global") && global}
-        {pathname.includes("/connect/room") && room}
-        {pathname.includes("/connect/video") && video}
-      </div>
+    <div className="h-screen grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="col-span-2 h-full">{children}</div>
+      <div className="">{room}</div>
+      <div className="">{global}</div>
+      <div className="col-span-2">{video}</div>
     </div>
   );
 }
